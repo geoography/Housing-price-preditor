@@ -1,6 +1,7 @@
 # 🏠 Housing Price Predictor
 
 Final project GDGoC ML — prediksi harga rumah menggunakan Machine Learning (Linear Regression).
+Link demo: https://joprii25-housing-price-predictor.hf.space
 
 ---
 
