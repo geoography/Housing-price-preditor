@@ -256,10 +256,11 @@ def predict():
         "model_used":      type(model).__name__,
         "model_r2":        MODEL_R2,
         "disclaimer": (
-            "Harga ini adalah estimasi awal yaitu sekitar "
-            f"{MODEL_R2*100:.1f}% dari variasi harga rumah yang dapat diprediski. "
+            "Harga ini adalah estimasi awal — sekitar "
+            f"{MODEL_R2*100:.1f}% dari variasi harga rumah bisa diprediksi dari data ini. "
             "Faktor lain seperti lokasi strategis, fasilitas sekitar, kondisi bangunan, "
             "dan tren pasar terkini juga turut menentukan harga jual sebenarnya. "
+            "Rentang di atas dihitung dari ± RMSE model (≈ $" + f"{MODEL_RMSE:,.0f}" + ")."
         ),
     }), 200
 
@@ -292,4 +293,5 @@ def internal_error(e):
 
 # ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)
