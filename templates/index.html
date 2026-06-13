@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Housing Price Predictor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #F7F8FA;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 520px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #5B6CF9, #8B5CF6);
+      padding: 2rem;
+      color: #fff;
+    }
+
+    .card-header h1 { font-size: 1.5rem; font-weight: 700; }
+    .card-header p  { font-size: 0.85rem; opacity: 0.85; margin-top: 0.3rem; }
+
+    .card-body { padding: 2rem; }
+
+    .form-group { margin-bottom: 1.2rem; }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #1C1E2E;
+      background: #F9FAFB;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: #5B6CF9;
+      background: #fff;
+    }
+
+    /* State invalid — border merah */
+    input.invalid, select.invalid {
+      border-color: #E8547A;
+      background: #FFF5F7;
+    }
+
+    /* Pesan warning per field */
+    .field-error {
+      display: none;
+      font-size: 0.76rem;
+      color: #E8547A;
+      margin-top: 0.3rem;
+      font-weight: 500;
+    }
+
+    .field-error.show { display: block; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      background: linear-gradient(135deg, #5B6CF9, #8B5CF6);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: opacity 0.2s;
+    }
+
+    button:hover    { opacity: 0.9; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Result box */
+    #result {
+      display: none;
+      margin-top: 1.5rem;
+      border-radius: 10px;
+      padding: 1.2rem 1.5rem;
+      text-align: center;
+    }
+
+    #result.success {
+      background: #ECFDF5;
+      border: 1.5px solid #10B981;
+    }
+
+    #result.error {
+      background: #FEF2F2;
+      border: 1.5px solid #E8547A;
+      text-align: left;
+    }
+
+    #result .label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6B7280;
+      margin-bottom: 0.3rem;
+    }
+
+    #result .price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #10B981;
+    }
+
+    #result .meta {
+      font-size: 0.8rem;
+      color: #9CA3AF;
+      margin-top: 0.3rem;
+    }
+
+    #result .range {
+      font-size: 0.95rem;
+      color: #374151;
+      margin-top: 0.6rem;
+      font-weight: 600;
+    }
+
+    #result .disclaimer {
+      font-size: 0.74rem;
+      color: #9CA3AF;
+      margin-top: 0.6rem;
+      line-height: 1.4;
+      text-align: left;
+    }
+
+    #result .error-title {
+      color: #E8547A;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    #result .error-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    #result .error-list li {
+      font-size: 0.82rem;
+      color: #E8547A;
+      padding: 0.2rem 0;
+    }
+
+    #result .error-list li::before {
+      content: "• ";
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <h1>🏠 Housing Price Predictor</h1>
+      <p>GDGoC ML Final Project — by Geofrey Melvern</p>
+    </div>
+
+    <div class="card-body">
+
+      <div class="form-group">
+        <label>Square Feet</label>
+        <input type="number" id="SquareFeet" placeholder="e.g. 1500"
+               min="50" max="50000"
+               oninput="clearError('SquareFeet')" />
+        <div class="field-error" id="err-SquareFeet">⚠ Harus antara 50 – 50.000 sqft</div>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label>Bedrooms</label>
+          <input type="number" id="Bedrooms" placeholder="e.g. 3"
+                 min="1" max="20"
+                 oninput="clearError('Bedrooms')" />
+          <div class="field-error" id="err-Bedrooms">⚠ Harus antara 1 – 20</div>
+        </div>
+        <div class="form-group">
+          <label>Bathrooms</label>
+          <input type="number" id="Bathrooms" placeholder="e.g. 2"
+                 min="1" max="20"
+                 oninput="clearError('Bathrooms')" />
+          <div class="field-error" id="err-Bathrooms">⚠ Harus antara 1 – 20</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Year Built</label>
+        <input type="number" id="YearBuilt" placeholder="e.g. 2005"
+               min="1800" max="2025"
+               oninput="clearError('YearBuilt')" />
+        <div class="field-error" id="err-YearBuilt">⚠ Harus antara 1800 – 2025</div>
+      </div>
+
+      <div class="form-group">
+        <label>Neighborhood</label>
+        <select id="Neighborhood">
+          <option value="rural">Rural</option>
+          <option value="suburb">Suburb</option>
+          <option value="urban">Urban</option>
+        </select>
+      </div>
+
+      <button id="predictBtn" onclick="predict()">Predict Price</button>
+
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Aturan validasi client-side (sama dengan server) ─────────────
+    const RULES = {
+      SquareFeet: { min: 50,   max: 50000, type: 'float' },
+      Bedrooms:   { min: 1,    max: 20,    type: 'int'   },
+      Bathrooms:  { min: 1,    max: 20,    type: 'int'   },
+      YearBuilt:  { min: 1800, max: 2025,  type: 'int'   },
+    };
+
+    // Hapus error saat user mulai mengetik ulang
+    function clearError(fieldId) {
+      const el  = document.getElementById(fieldId);
+      const err = document.getElementById('err-' + fieldId);
+      if (el)  el.classList.remove('invalid');
+      if (err) err.classList.remove('show');
+    }
+
+    // Tampilkan error di bawah field tertentu
+    function showFieldError(fieldId) {
+      const el  = document.getElementById(fieldId);
+      const err = document.getElementById('err-' + fieldId);
+      if (el)  el.classList.add('invalid');
+      if (err) err.classList.add('show');
+    }
+
+    // Validasi semua field, return true jika semua valid
+    function validateFields(payload) {
+      let valid = true;
+
+      for (const [field, rules] of Object.entries(RULES)) {
+        const val = payload[field];
+        if (isNaN(val) || val === null || val < rules.min || val > rules.max) {
+          showFieldError(field);
+          valid = false;
+        }
+      }
+
+      return valid;
+    }
+
+    async function predict() {
+      const btn    = document.getElementById('predictBtn');
+      const result = document.getElementById('result');
+      const neigh  = document.getElementById('Neighborhood').value;
+
+      // Encode neighborhood
+      const neighUrban  = neigh === 'urban'  ? 1 : 0;
+      const neighSuburb = neigh === 'suburb' ? 1 : 0;
+
+      const payload = {
+        SquareFeet:          parseFloat(document.getElementById('SquareFeet').value),
+        Bedrooms:            parseInt(document.getElementById('Bedrooms').value),
+        Bathrooms:           parseInt(document.getElementById('Bathrooms').value),
+        YearBuilt:           parseInt(document.getElementById('YearBuilt').value),
+        Neighborhood_Urban:  neighUrban,
+        Neighborhood_Suburb: neighSuburb,
+      };
+
+      // Validasi client-side dulu sebelum kirim ke server
+      if (!validateFields(payload)) {
+        result.style.display = 'none';
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Memproses...';
+      result.style.display = 'none';
+
+      try {
+        const res  = await fetch('/predict', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          const formatted = new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: 'USD', maximumFractionDigits: 0
+          }).format(data.predicted_price);
+
+          const rangeLow  = new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: 'USD', maximumFractionDigits: 0
+          }).format(data.price_range.low);
+          const rangeHigh = new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: 'USD', maximumFractionDigits: 0
+          }).format(data.price_range.high);
+
+          result.className = 'success';
+          result.innerHTML = `
+            <div class="label">Estimated Price</div>
+            <div class="price">${formatted}</div>
+            <div class="range">Perkiraan range: ${rangeLow} – ${rangeHigh}</div>
+            <div class="meta">Model: ${data.model_used} (R² = ${data.model_r2})</div>
+            <div class="disclaimer">${data.disclaimer}</div>
+          `;
+        } else {
+          // Tampilkan detail error dari server (bisa berupa list)
+          const details = data.details || [];
+          const listHTML = details.length
+            ? `<ul class="error-list">${details.map(d => `<li>${d}</li>`).join('')}</ul>`
+            : '';
+
+          result.className = 'error';
+          result.innerHTML = `
+            <div class="error-title">⚠ ${data.error || 'Terjadi kesalahan'}</div>
+            ${listHTML}
+          `;
+        }
+      } catch (err) {
+        result.className = 'error';
+        result.innerHTML = `<div class="error-title">⚠ Tidak bisa terhubung ke server</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Predict Price';
+        result.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
